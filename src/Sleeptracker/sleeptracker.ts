@@ -28,11 +28,12 @@ const beds: Dictionary<Bed> = {};
 
 export const sleeptracker = async (mqtt: IMQTTConnection) => {
   const users = getUsers();
-  if (!users.length) return logInfo('[Sleeptracker] No users configured');
+  if (!users.length) logInfo('[Sleeptracker] No users configured');
   for (const user of users) {
     const devices = await getDevices(user);
     if (devices.length === 0) {
-      return logError('[Sleeptracker] Could not load devices');
+      logError('[Sleeptracker] Could not load devices');
+      continue;
     }
     for (const device of devices) {
       const { sleeptrackerProcessorID: processorId } = device;
@@ -45,10 +46,11 @@ export const sleeptracker = async (mqtt: IMQTTConnection) => {
       }
 
       if (!bed) {
-        const {
-          baseSmartCableSupported: isSmartBed,
-          powerBase: { antiSnorePresetSupported, headAngleTicksPerDegree, footAngleTicksPerDegree },
-        } = device;
+        const isSmartBed = device.baseSmartCableSupported;
+        const antiSnorePresetSupported = !!device.powerBase?.antiSnorePresetSupported;
+        const headAngleTicksPerDegree = device.powerBase?.headAngleTicksPerDegree || 0;
+        const footAngleTicksPerDegree = device.powerBase?.footAngleTicksPerDegree || 0;
+        const productFeatures = helloData.productFeatures || [];
         const deviceData = buildMQTTDeviceData(device);
         bed = beds[processorId] = {
           processorId,
@@ -59,8 +61,8 @@ export const sleeptracker = async (mqtt: IMQTTConnection) => {
           supportedFeatures: {
             smartBedControls: isSmartBed,
             antiSnorePreset: antiSnorePresetSupported,
-            environmentSensors: helloData.productFeatures.includes('env_sensors'),
-            motors: helloData.productFeatures.includes('motors'),
+            environmentSensors: productFeatures.includes('env_sensors'),
+            motors: productFeatures.includes('motors'),
           },
           data: { headAngleTicksPerDegree, footAngleTicksPerDegree },
           entities: {
@@ -69,7 +71,7 @@ export const sleeptracker = async (mqtt: IMQTTConnection) => {
           },
         };
       }
-      const capabilities = helloData.motorMeta.capabilities;
+      const capabilities = helloData.motorMeta?.capabilities || [];
       const sleepSensors = await getSleepSensors(bed.processorId, user);
       const sideNameFunc = getSideNameFunc(sleepSensors, (s) => s.unitNumber);
       for (const sleepSensor of sleepSensors) {

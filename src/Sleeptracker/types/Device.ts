@@ -43,6 +43,6 @@ export type Device = {
     antiSnorePulseCount2: number;
     headAngleTicksPerDegree: number;
     footAngleTicksPerDegree: number;
-  };
+  } | null;
   enableDataPause: boolean;
 };
