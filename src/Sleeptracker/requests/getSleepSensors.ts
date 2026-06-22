@@ -28,7 +28,7 @@ export const getSleepSensors = async (processorId: number, credentials: Credenti
         sleeptrackerProcessorID: processorId,
       },
     });
-    return response.data.sensorMap;
+    return Array.isArray(response.data.sensorMap) ? response.data.sensorMap : [];
   } catch (err) {
     logError(err);
     return [];
