@@ -43,9 +43,10 @@ describe('connectToMQTT', () => {
     client.emit('error', secondError);
     await new Promise((resolve) => setImmediate(resolve));
     client.emit('connect');
-    client.emit('error', postConnectError);
 
     await expect(connectionPromise).resolves.toBeDefined();
+    client.emit('error', postConnectError);
+
     expect(mockedConnect).toHaveBeenCalledTimes(1);
     expect(mockedLogInfo).toHaveBeenNthCalledWith(1, '[MQTT] Connecting...');
     expect(mockedLogError).toHaveBeenNthCalledWith(1, '[MQTT] Connect Error', firstError);
