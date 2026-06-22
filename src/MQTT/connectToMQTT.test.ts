@@ -30,21 +30,27 @@ describe('connectToMQTT', () => {
     jest.clearAllMocks();
   });
 
-  it('keeps waiting for connect after an initial connection error', async () => {
+  it('keeps waiting across repeated connection errors and cleans up after connect', async () => {
     const client = new MockMqttClient();
     mockedConnect.mockReturnValue(client as never);
 
     const connectionPromise = connectToMQTT();
-    const error = new Error('connect ECONNREFUSED');
+    const firstError = new Error('connect ECONNREFUSED');
+    const secondError = new Error('connect ETIMEDOUT');
+    const postConnectError = new Error('post-connect error');
 
-    client.emit('error', error);
+    client.emit('error', firstError);
+    client.emit('error', secondError);
     await new Promise((resolve) => setImmediate(resolve));
     client.emit('connect');
+    client.emit('error', postConnectError);
 
     await expect(connectionPromise).resolves.toBeDefined();
     expect(mockedConnect).toHaveBeenCalledTimes(1);
     expect(mockedLogInfo).toHaveBeenNthCalledWith(1, '[MQTT] Connecting...');
-    expect(mockedLogError).toHaveBeenCalledWith('[MQTT] Connect Error', error);
+    expect(mockedLogError).toHaveBeenNthCalledWith(1, '[MQTT] Connect Error', firstError);
+    expect(mockedLogError).toHaveBeenNthCalledWith(2, '[MQTT] Connect Error', secondError);
+    expect(mockedLogError).toHaveBeenNthCalledWith(3, '[MQTT] Error', postConnectError);
     expect(mockedLogInfo).toHaveBeenCalledWith('[MQTT] Connected');
   });
 });
