@@ -16,7 +16,7 @@ if [ $MQTTHOST = '<auto_detect>' ]; then
         echo "Using discovered MQTT Host: ${MQTTHOST}"
     else
     	echo "No Home Assistant MQTT service found, using defaults"
-        MQTTHOST="172.30.32.1"
+        MQTTHOST="core-mosquitto"
         echo "Using default MQTT Host: ${MQTTHOST}"
     fi
 else
